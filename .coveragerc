@@ -1,0 +1,11 @@
+[run]
+source = src
+omit =
+    */__init__.py
+    src/main.py
+    */wsgi.py
+
+[report]
+fail_under = 90
+show_missing = True
+skip_covered = True
