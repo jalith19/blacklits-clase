@@ -1,0 +1,172 @@
+{
+  "info": {
+    "_postman_id": "6dff0bee-0a1e-4293-b364-645466005250",
+    "name": "blacklist_email",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "38956739"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Health Check responde con 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('La respuesta contiene pong', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.message).to.eql('pong');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{RUTA_BASE}}/blacklists/ping",
+          "host": [
+            "{{RUTA_BASE}}"
+          ],
+          "path": [
+            "blacklists",
+            "ping"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear BlackList",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const timestamp = Date.now();",
+              "const email = `newman-${timestamp}@example.com`;",
+              "pm.collectionVariables.set('TEST_EMAIL', email);",
+              "console.log('Correo de prueba: ' + email);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Blacklist creada correctamente', function () {",
+              "    pm.response.to.have.status(201);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"{{TEST_EMAIL}}\",\n    \"app_uuid\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"blocked_reason\": \"Prueba de integración Newman\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{RUTA_BASE}}/blacklists",
+          "host": [
+            "{{RUTA_BASE}}"
+          ],
+          "path": [
+            "blacklists"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Consultar Blacklist",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Consulta de blacklist responde con 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('El correo consultado está en la blacklist', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json).to.be.an('object');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{RUTA_BASE}}/blacklists/{{TEST_EMAIL}}",
+          "host": [
+            "{{RUTA_BASE}}"
+          ],
+          "path": [
+            "blacklists",
+            "{{TEST_EMAIL}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "RUTA_BASE",
+      "value": "http://localhost:5001"
+    },
+    {
+      "key": "TOKEN",
+      "value": ""
+    },
+    {
+      "key": "TEST_EMAIL",
+      "value": ""
+    }
+  ]
+}

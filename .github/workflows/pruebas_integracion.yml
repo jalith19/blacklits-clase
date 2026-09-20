@@ -1,0 +1,68 @@
+name: Pruebas de integración
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  pruebas_integracion:
+    name: pruebas_integracion
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar Newman
+        run: npm install -g newman
+
+      - name: Crear archivo .env
+        env:
+          BEARER_TOKEN: ${{ secrets.BEARER_TOKEN }}
+        run: |
+          echo "DATABASE_URL=postgresql://postgres:postgres@db:5432/blacklist_db" > .env
+          echo "BEARER_TOKEN=$BEARER_TOKEN" >> .env
+
+      - name: Levantar aplicación y base de datos
+        run: docker compose up -d --build
+
+      - name: Esperar disponibilidad de la API
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:5001/blacklists/ping; then
+              echo "API disponible"
+              exit 0
+            fi
+
+            echo "Esperando API..."
+            sleep 2
+          done
+
+          echo "La API no estuvo disponible"
+          docker compose logs
+          exit 1
+
+      - name: Ejecutar colección Newman
+        env:
+          TOKEN: ${{ secrets.BEARER_TOKEN }}
+        run: |
+          newman run ./blacklist_email.postman_collection.json \
+            --env-var "RUTA_BASE=http://localhost:5001" \
+            --env-var "TOKEN=$TOKEN"
+
+      - name: Mostrar logs
+        if: always()
+        run: docker compose logs
+
+      - name: Detener servicios
+        if: always()
+        run: docker compose down -v
